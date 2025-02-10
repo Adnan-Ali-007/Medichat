@@ -24,8 +24,9 @@ def load_llm(huggingface_repo_id):
 # Custom Prompt
 CUSTOM_PROMPT_TEMPLATE = """
 Use the pieces of information provided in the context to answer user's question.
-If you don't know the answer, just say that you don't know. Don't try to make up an answer. 
-Don't provide anything out of the given context.
+If you don't know the answer, revert back with JUST 'NA', nothing else. Don't try to make up an answer. 
+Don't provide anything out of the given context. 
+
 Context: {context}
 Question: {question}
 Start the answer directly. No small talk, please.

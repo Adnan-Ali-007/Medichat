@@ -23,14 +23,13 @@ def load_llm(huggingface_repo_id):
     return llm
 # Custom Prompt
 CUSTOM_PROMPT_TEMPLATE = """
-Answer the user's question **only** using the provided context.  
-- If the answer is not found in the context, **reply only with 'NA'**—no explanations, assumptions, or reasoning.  
-- Do **not** include citations, sources, or references in your response.  
+Use only the provided context to answer the user's question.  
+If the answer is not found within the context, respond with 'NA' and nothing else.  
 
 Context: {context}  
 Question: {question}  
-Provide a direct answer:
 
+Start the answer directly. No small talk, no explanations.
 """
 def set_custom_prompt(custom_prompt_template):
     prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])

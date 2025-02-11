@@ -21,16 +21,26 @@ def load_llm(huggingface_repo_id):
         model_kwargs={"max_length": 512}
     )
     return llm
-# Custom Prompt
-CUSTOM_PROMPT_TEMPLATE = """
-Use only the provided context to answer the user's question.  
+CUSTOM_PROMPT_TEMPLATE = [
+    {
+        "role": "system",
+        "content": """Use only the provided context to answer the user's question.  
 If the answer is not found within the context, respond with 'NA' and nothing else.  
+Start the answer directly. No small talk, no explanations.""",
+    },
+    {
+        "role": "user",
+        "content": """Context:  
+{context}  
 
-Context: {context}  
-Question: {question}  
+Question: {question}""",
+    },
+]
 
-Start the answer directly. No small talk, no explanations.
-"""
+def set_custom_prompt(custom_prompt_template):
+    prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
+    return prompt
+
 def set_custom_prompt(custom_prompt_template):
     prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
     return prompt

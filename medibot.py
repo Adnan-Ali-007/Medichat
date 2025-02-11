@@ -93,12 +93,12 @@ def main():
             # Get response
             response = qa_chain.invoke({'query': prompt})
             result = response["result"].strip()
-            source_docs = format_source_docs(response["source_documents"])
 
             # Handle strict responses
             if result == "NA":
                 result_to_show = "I don't have an answer based on the provided context."
             else:
+                source_docs = format_source_docs(response["source_documents"])
                 result_to_show = f"{result}\n\n**Source Documents:**\n{source_docs}"
 
             st.chat_message('assistant').markdown(result_to_show)

@@ -52,13 +52,17 @@ def load_llm():
         model_kwargs={"max_length": 512}
     )
 
+def clean_text(text):
+    """Cleans text for better display."""
+    return text.replace("\n", " ").strip()
+
 def format_source_docs(source_documents):
     """Formats source documents for display."""
     formatted_docs = ""
     for doc in source_documents:
         source = doc.metadata.get('source', 'Unknown Source')
         page = doc.metadata.get('page', 'Unknown Page')
-        content = doc.page_content.replace("\n", " ").strip()
+        content = clean_text(doc.page_content)
         formatted_docs += f"**Source:** {source} (Page {page})\n**Content:** {content}\n\n"
     return formatted_docs.strip()
 
@@ -94,7 +98,7 @@ def main():
             response = qa_chain.invoke({'query': prompt})
             result = response["result"].strip()
 
-            # Handle strict responses
+            # **STOP showing sources if response is 'NA'**
             if result == "NA":
                 result_to_show = "I don't have an answer based on the provided context."
             else:

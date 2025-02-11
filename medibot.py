@@ -101,6 +101,7 @@ def main():
             # **STOP showing sources if response is 'NA'**
             if result == "NA":
                 result_to_show = "I don't have an answer based on the provided context."
+                source_docs = ""  # No sources should be displayed
             else:
                 source_docs = format_source_docs(response["source_documents"])
                 result_to_show = f"{result}\n\n**Source Documents:**\n{source_docs}"

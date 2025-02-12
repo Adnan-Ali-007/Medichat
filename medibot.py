@@ -74,38 +74,37 @@ def main():
         HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
-        try:
-            vectorstore = get_vectorstore()
-            if vectorstore is None:
-                st.error("Failed to load the vector store")
+      try:
+    vectorstore = get_vectorstore()
+    if vectorstore is None:
+        st.error("Failed to load the vector store")
 
-            # Prepare the QA chain
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
-                chain_type="stuff",
-                retriever=vectorstore.as_retriever(search_kwargs={'k': 3}),
-                return_source_documents=True,
-                chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
-            )
+    # Prepare the QA chain
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
+        chain_type="stuff",
+        retriever=vectorstore.as_retriever(search_kwargs={'k': 3}),
+        return_source_documents=True,
+        chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
+    )
 
-            # Run the query
-# Run the query
-response = qa_chain.invoke({'query': prompt})
-result = response["result"].strip()
+    # Run the query
+    response = qa_chain.invoke({'query': prompt})
+    result = response["result"].strip()
 
-# **If the answer is 'NA', do not display any citations**
-if result == "NA":
-    result_to_show = "NA"  # Just return 'NA' with no explanations
-else:
-    source_docs = format_source_docs(response["source_documents"])  # Format source documents
-    result_to_show = f"{clean_text(result)}\n\n**Source Documents**:\n{source_docs}"
+    # **If the answer is 'NA', do not display any citations**
+    if result == "NA":
+        result_to_show = "NA"  # Just return 'NA' with no explanations
+    else:
+        source_docs = format_source_docs(response["source_documents"])  # Format source documents
+        result_to_show = f"{clean_text(result)}\n\n**Source Documents**:\n{source_docs}"
 
-st.chat_message('assistant').markdown(result_to_show)
-st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
+    st.chat_message('assistant').markdown(result_to_show)
+    st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
 
+except Exception as e:
+    st.error(f"Error: {str(e)}")
 
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()

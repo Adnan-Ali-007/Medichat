@@ -75,6 +75,7 @@ def main():
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
       try:
+   try:
     vectorstore = get_vectorstore()
     if vectorstore is None:
         st.error("Failed to load the vector store")

@@ -71,7 +71,7 @@ Provide a direct answer:
         HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
-       try:
+        try:
             vectorstore = get_vectorstore()
             if vectorstore is None:
                 st.error("Failed to load the vector store")
@@ -87,19 +87,21 @@ Provide a direct answer:
 
             # Run the query
             response = qa_chain.invoke({'query': prompt})
-            result = response["result"].strip()
+            result = response["result"]
+            source_documents = response["source_documents"]
 
-        # **If the answer is 'NA', return only 'NA' with no explanations and no citations**
-            if result == "NA":
-                result_to_show = "NA"  # Only show 'NA' and nothing else, no source documents
-            else:
-                source_docs = format_source_docs(response["source_documents"])  # Format source documents
-                result_to_show = f"{clean_text(result)}\n\n**Source Documents**:\n{source_docs}"
+            # Format the result and source docs
+            result_to_show = clean_text(result)  # Clean up the answer
+            source_docs = format_source_docs(source_documents)  # Format source documents
+
+            # Display result with sources
+            result_to_show = f"{result_to_show}\n\n**Source Documents**:\n{source_docs}"
 
             st.chat_message('assistant').markdown(result_to_show)
             st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
 
         except Exception as e:
             st.error(f"Error: {str(e)}")
+
 if __name__ == "__main__":
     main()

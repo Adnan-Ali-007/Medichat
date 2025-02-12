@@ -74,10 +74,11 @@ def main():
         HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
-   try:
-       vectorstore = get_vectorstore()
-       if vectorstore is None:
-       st.error("Failed to load the vector store")
+  try:
+    vectorstore = get_vectorstore()
+    if vectorstore is None:
+    st.error("Failed to load the vector store")  
+
 
     # Prepare the QA chain
     qa_chain = RetrievalQA.from_chain_type(

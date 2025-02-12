@@ -80,7 +80,7 @@ def main():
                 st.error("Failed to load the vector store")
 
 
-    # Prepare the QA chain
+     # Prepare the QA chain
     qa_chain = RetrievalQA.from_chain_type(
         llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
         chain_type="stuff",
@@ -93,7 +93,7 @@ def main():
     response = qa_chain.invoke({'query': prompt})
     result = response["result"].strip()
 
-    # **If the answer is 'NA', do not display any citations**
+    # If the answer is 'NA', do not display any citations
     if result == "NA":
         result_to_show = "NA"  # Just return 'NA' with no explanations
     else:
@@ -103,9 +103,7 @@ def main():
     st.chat_message('assistant').markdown(result_to_show)
     st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
 
-except Exception as e:
+except Exception as e:  # ✅ Add an except block to handle errors
     st.error(f"Error: {str(e)}")
-
-
 if __name__ == "__main__":
     main()

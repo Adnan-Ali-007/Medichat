@@ -74,7 +74,6 @@ def main():
         HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
-      try:
    try:
     vectorstore = get_vectorstore()
     if vectorstore is None:

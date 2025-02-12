@@ -85,25 +85,23 @@ Provide a direct answer:
                 chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
             )
 
-           try:
-    # Get the response from the QA chain
-    response = qa_chain.invoke({'query': prompt})
-    result = response["result"].strip()
+            # Run the query
+            response = qa_chain.invoke({'query': prompt})
+            result = response["result"]
+            source_documents = response["source_documents"]
 
-    # If the answer is 'NA', return only 'NA' without citations
-    if result == "NA":
-        result_to_show = "NA"
-    else:
-        source_docs = format_source_docs(response["source_documents"])  # Format source documents
-        result_to_show = f"{clean_text(result)}\n\n**Source Documents**:\n{source_docs}"
+            # Format the result and source docs
+            result_to_show = clean_text(result)  # Clean up the answer
+            source_docs = format_source_docs(source_documents)  # Format source documents
 
-    # Display the result (with or without sources)
-    st.chat_message('assistant').markdown(result_to_show)
-    st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
+            # Display result with sources
+            result_to_show = f"{result_to_show}\n\n**Source Documents**:\n{source_docs}"
 
-except Exception as e:
-    st.error(f"Error: {str(e)}")
+            st.chat_message('assistant').markdown(result_to_show)
+            st.session_state.messages.append({'role': 'assistant', 'content': result_to_show})
 
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()

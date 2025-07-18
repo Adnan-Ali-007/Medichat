@@ -1,10 +1,14 @@
 import os
 import streamlit as st
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFacePipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+
+# Set your HuggingFace token here
+os.environ["HUGGINGFACE_HUB_TOKEN"] = "hf_your_new_token_here"  # Replace with your actual token
 
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
@@ -18,11 +22,41 @@ def set_custom_prompt(custom_prompt_template):
     return PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
 
 def load_llm(huggingface_repo_id, HF_TOKEN):
-    return HuggingFaceEndpoint(
-        repo_id=huggingface_repo_id,
-        temperature=0.5,
-        model_kwargs={"token": HF_TOKEN, "max_length": "512"}
+    @st.cache_resource
+    def load_llm_cached():
+        model_name = "google/flan-t5-base"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        
+        pipe = pipeline(
+            "text2text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_length=512,
+            temperature=0.1,
+            do_sample=True
+        )
+        
+        return HuggingFacePipeline(pipeline=pipe)
+    
+    return load_llm_cached()
+
+@st.cache_resource
+def get_llm():
+    model_name = "google/flan-t5-base"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    
+    pipe = pipeline(
+        "text2text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_length=512,
+        temperature=0.1,
+        do_sample=True
     )
+    
+    return HuggingFacePipeline(pipeline=pipe)
 
 def clean_text(text):
     """Removes extra spaces and newlines from text."""
@@ -56,17 +90,17 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         CUSTOM_PROMPT_TEMPLATE = """
-        Answer the user's question **only** using the provided context.  
-        - If the answer is not found in the context, **reply only with 'NA'**—no explanations, assumptions, or reasoning.  
-        - Do **not** include citations, sources, or references in your response.  
+Use only the provided context to answer the user's question.
+If the answer is not found within the context, respond with 'NA' and nothing else.
+Be concise and direct.
 
-        Context: {context}  
-        Question: {question}  
-        Provide a direct answer:
-        """
+Context: {context}
 
-        HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
-        HF_TOKEN = os.environ.get("HF_TOKEN")
+Question: {question}
+
+Answer:"""
+
+        HUGGINGFACE_REPO_ID = "google/flan-t5-base"
 
         try:
             vectorstore = get_vectorstore()
@@ -76,7 +110,7 @@ def main():
 
             # Prepare the QA chain
             qa_chain = RetrievalQA.from_chain_type(
-                llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
+                llm=get_llm(),
                 chain_type="stuff",
                 retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
                 return_source_documents=True,

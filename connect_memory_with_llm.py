@@ -11,7 +11,7 @@ HF_TOKEN = os.environ.get("HF_TOKEN")
 if not HF_TOKEN:
     raise ValueError("HF_TOKEN is not set. Please check your .env file.")
 
-HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
+HUGGINGFACE_REPO_ID = "google/flan-t5-base"
 # Initialize the LLM
 def load_llm(huggingface_repo_id):
     llm = HuggingFaceEndpoint(

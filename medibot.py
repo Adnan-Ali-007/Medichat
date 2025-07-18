@@ -68,7 +68,7 @@ Question: {question}
 
 Answer:"""
 
-        HUGGINGFACE_REPO_ID = "microsoft/DialoGPT-medium"
+        HUGGINGFACE_REPO_ID = "google/flan-t5-base"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
         try:

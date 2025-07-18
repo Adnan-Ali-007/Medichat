@@ -17,7 +17,7 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 def get_vectorstore():
     embedding_model = HuggingFaceEmbeddings(
         model_name='sentence-transformers/all-MiniLM-L6-v2',
-        model_kwargs={'token': HF_TOKEN}
+        model_kwargs={'use_auth_token': HF_TOKEN}
     )
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
@@ -48,8 +48,8 @@ def load_llm(huggingface_repo_id, HF_TOKEN):
 @st.cache_resource
 def get_llm():
     model_name = "google/flan-t5-base"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=HF_TOKEN)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=HF_TOKEN)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, use_auth_token=HF_TOKEN)
     
     pipe = pipeline(
         "text2text-generation",

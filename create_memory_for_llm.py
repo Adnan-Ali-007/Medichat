@@ -22,7 +22,12 @@ def create_chunks(extracted_data):
 text_chunks=create_chunks(extracted_data=documents)
 #Create vector emedding
 def get_embedding_model():
-   embedding_model=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")#chuncks to numeric emdeiing numbers
+   # Add your HuggingFace token here
+   HF_TOKEN = "hf_your_new_token_here"  # Replace with your actual token
+   embedding_model=HuggingFaceEmbeddings(
+       model_name="sentence-transformers/all-MiniLM-L6-v2",
+       model_kwargs={'token': HF_TOKEN}
+   )#chuncks to numeric emdeiing numbers
    return embedding_model
 embedding_model=get_embedding_model()
 #store in faiss locally

@@ -8,13 +8,17 @@ from langchain_huggingface import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
 # Set your HuggingFace token here
-os.environ["HUGGINGFACE_HUB_TOKEN"] = "hf_your_new_token_here"  # Replace with your actual token
+HF_TOKEN = "hf_your_new_token_here"  # Replace with your actual token
+os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
 @st.cache_resource
 def get_vectorstore():
-    embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+    embedding_model = HuggingFaceEmbeddings(
+        model_name='sentence-transformers/all-MiniLM-L6-v2',
+        model_kwargs={'token': HF_TOKEN}
+    )
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
 
@@ -44,8 +48,8 @@ def load_llm(huggingface_repo_id, HF_TOKEN):
 @st.cache_resource
 def get_llm():
     model_name = "google/flan-t5-base"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=HF_TOKEN)
     
     pipe = pipeline(
         "text2text-generation",

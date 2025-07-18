@@ -22,8 +22,27 @@ def set_custom_prompt(custom_prompt_template):
     return PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
 
 def load_llm(huggingface_repo_id, HF_TOKEN):
+    @st.cache_resource
+    def load_llm_cached():
+        model_name = "google/flan-t5-base"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        
+        pipe = pipeline(
+            "text2text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_length=512,
+            temperature=0.1,
+            do_sample=True
+        )
+        
+        return HuggingFacePipeline(pipeline=pipe)
+    
+    return load_llm_cached()
+
 @st.cache_resource
-def load_llm():
+def get_llm():
     model_name = "google/flan-t5-base"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
@@ -91,7 +110,7 @@ Answer:"""
 
             # Prepare the QA chain
             qa_chain = RetrievalQA.from_chain_type(
-                llm=load_llm(),
+                llm=get_llm(),
                 chain_type="stuff",
                 retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
                 return_source_documents=True,

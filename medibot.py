@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
@@ -20,8 +20,10 @@ def set_custom_prompt(custom_prompt_template):
 def load_llm(huggingface_repo_id, HF_TOKEN):
     return HuggingFaceEndpoint(
         repo_id=huggingface_repo_id,
+        token=HF_TOKEN,
         temperature=0.5,
-        model_kwargs={"token": HF_TOKEN, "max_length": "512"}
+        model_kwargs={"max_length": 512},
+        task="conversational"
     )
 
 def clean_text(text):
@@ -56,16 +58,17 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
 
         CUSTOM_PROMPT_TEMPLATE = """
-        Answer the user's question **only** using the provided context.  
-        - If the answer is not found in the context, **reply only with 'NA'**—no explanations, assumptions, or reasoning.  
-        - Do **not** include citations, sources, or references in your response.  
+Use only the provided context to answer the user's question.
+If the answer is not found within the context, respond with 'NA' and nothing else.
+Start the answer directly. No small talk, no explanations.
 
-        Context: {context}  
-        Question: {question}  
-        Provide a direct answer:
-        """
+Context: {context}
 
-        HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
+Question: {question}
+
+Answer:"""
+
+        HUGGINGFACE_REPO_ID = "microsoft/DialoGPT-medium"
         HF_TOKEN = os.environ.get("HF_TOKEN")
 
         try:

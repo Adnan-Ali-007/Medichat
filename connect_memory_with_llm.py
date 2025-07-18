@@ -18,7 +18,8 @@ def load_llm(huggingface_repo_id):
         repo_id=huggingface_repo_id,
         token=HF_TOKEN,
         temperature=0.5,
-        model_kwargs={"max_length": 512}
+        model_kwargs={"max_length": 512},
+        task="conversational"
     )
     return llm
 CUSTOM_PROMPT_TEMPLATE = [

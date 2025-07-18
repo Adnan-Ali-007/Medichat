@@ -4,7 +4,11 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFacePipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+
+# Set your HuggingFace token here
+os.environ["HUGGINGFACE_HUB_TOKEN"] = "hf_your_new_token_here"  # Replace with your actual token
 
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
@@ -18,13 +22,22 @@ def set_custom_prompt(custom_prompt_template):
     return PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
 
 def load_llm(huggingface_repo_id, HF_TOKEN):
-    return HuggingFaceEndpoint(
-        repo_id=huggingface_repo_id,
-        token=HF_TOKEN,
-        temperature=0.5,
-        model_kwargs={"max_length": 512},
-        task="conversational"
+@st.cache_resource
+def load_llm():
+    model_name = "google/flan-t5-base"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    
+    pipe = pipeline(
+        "text2text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        max_length=512,
+        temperature=0.1,
+        do_sample=True
     )
+    
+    return HuggingFacePipeline(pipeline=pipe)
 
 def clean_text(text):
     """Removes extra spaces and newlines from text."""
@@ -60,7 +73,7 @@ def main():
         CUSTOM_PROMPT_TEMPLATE = """
 Use only the provided context to answer the user's question.
 If the answer is not found within the context, respond with 'NA' and nothing else.
-Start the answer directly. No small talk, no explanations.
+Be concise and direct.
 
 Context: {context}
 
@@ -69,7 +82,6 @@ Question: {question}
 Answer:"""
 
         HUGGINGFACE_REPO_ID = "google/flan-t5-base"
-        HF_TOKEN = os.environ.get("HF_TOKEN")
 
         try:
             vectorstore = get_vectorstore()
@@ -79,7 +91,7 @@ Answer:"""
 
             # Prepare the QA chain
             qa_chain = RetrievalQA.from_chain_type(
-                llm=load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, HF_TOKEN=HF_TOKEN),
+                llm=load_llm(),
                 chain_type="stuff",
                 retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
                 return_source_documents=True,

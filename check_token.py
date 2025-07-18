@@ -1,4 +1,5 @@
 import requests
+import os
 
 def check_hf_token(token):
     """Check if HuggingFace token is valid and get user info"""
@@ -29,8 +30,13 @@ def check_hf_token(token):
         return False
 
 if __name__ == "__main__":
-    # Your new token - replace with your actual token
-    HF_TOKEN = "hf_your_new_token_here"  # Replace this with your actual token from HuggingFace
+    # Get token from environment variable
+    HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")
+    
+    if not HF_TOKEN:
+        print("❌ No token found! Please set the HUGGINGFACE_HUB_TOKEN environment variable.")
+        print("Example: export HUGGINGFACE_HUB_TOKEN='your_token_here'")
+        exit(1)
     
     print("Checking HuggingFace token...")
     check_hf_token(HF_TOKEN)

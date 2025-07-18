@@ -7,8 +7,17 @@ from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
-# Set your HuggingFace token here
-HF_TOKEN = "hf_your_new_token_here"  # Replace with your actual token
+# Get HuggingFace token from environment or Streamlit secrets
+try:
+    # Try to get from Streamlit secrets first (for deployment)
+    HF_TOKEN = st.secrets["HUGGINGFACE_HUB_TOKEN"]
+except:
+    # Fallback to environment variable (for local development)
+    HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")
+    if not HF_TOKEN:
+        st.error("HuggingFace token not found. Please set HUGGINGFACE_HUB_TOKEN in secrets or environment variables.")
+        st.stop()
+
 os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 DB_FAISS_PATH = "vectorstore/db_faiss"

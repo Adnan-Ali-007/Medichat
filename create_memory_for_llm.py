@@ -1,4 +1,5 @@
 #store emebedding in faiss
+import os
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -22,8 +23,11 @@ def create_chunks(extracted_data):
 text_chunks=create_chunks(extracted_data=documents)
 #Create vector emedding
 def get_embedding_model():
-   # Add your HuggingFace token here
-   HF_TOKEN = "hf_your_new_token_here"  # Replace with your actual token
+   # Get HuggingFace token from environment variable
+   HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")
+   if not HF_TOKEN:
+       raise ValueError("HUGGINGFACE_HUB_TOKEN environment variable not set")
+   
    embedding_model=HuggingFaceEmbeddings(
        model_name="sentence-transformers/all-MiniLM-L6-v2",
        model_kwargs={'use_auth_token': HF_TOKEN}

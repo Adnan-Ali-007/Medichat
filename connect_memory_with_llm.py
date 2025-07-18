@@ -6,8 +6,12 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
-# Set your HuggingFace token here
-os.environ["HUGGINGFACE_HUB_TOKEN"] = "hf_your_new_token_here"  # Replace with your actual token
+# Get HuggingFace token from environment variable
+HF_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN")
+if not HF_TOKEN:
+    raise ValueError("HUGGINGFACE_HUB_TOKEN environment variable not set")
+
+os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 # Initialize the LLM
 def load_llm():

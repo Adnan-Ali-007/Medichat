@@ -26,7 +26,6 @@ def load_llm():
         max_length=512,
         temperature=0.1,
         do_sample=True
-        task="conversational"
     )
     
     return HuggingFacePipeline(pipeline=pipe)

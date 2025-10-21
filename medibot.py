@@ -26,40 +26,20 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 def get_vectorstore():
     embedding_model = HuggingFaceEmbeddings(
         model_name='sentence-transformers/all-MiniLM-L6-v2',
-        model_kwargs={'use_auth_token': HF_TOKEN}
+        model_kwargs={'token': HF_TOKEN}
     )
-    db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+    db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=False)
     return db
 
 def set_custom_prompt(custom_prompt_template):
     return PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
 
-def load_llm(huggingface_repo_id, HF_TOKEN):
-    @st.cache_resource
-    def load_llm_cached():
-        model_name = "google/flan-t5-base"
-        tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN)
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=HF_TOKEN)
-        
-        pipe = pipeline(
-            "text2text-generation",
-            model=model,
-            tokenizer=tokenizer,
-            max_length=512,
-            temperature=0.1,
-            do_sample=True
-        )
-        
-        return HuggingFacePipeline(pipeline=pipe)
-    
-    return load_llm_cached()
-
 @st.cache_resource
 def get_llm():
     model_name = "google/flan-t5-base"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=HF_TOKEN)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, use_auth_token=HF_TOKEN)
-    
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, token=HF_TOKEN)
+
     pipe = pipeline(
         "text2text-generation",
         model=model,
@@ -68,7 +48,7 @@ def get_llm():
         temperature=0.1,
         do_sample=True
     )
-    
+
     return HuggingFacePipeline(pipeline=pipe)
 
 def clean_text(text):
@@ -102,18 +82,27 @@ def main():
         st.chat_message("user").markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
 
-        CUSTOM_PROMPT_TEMPLATE = """
+        # Build conversation history for context
+        conversation_history = ""
+        if len(st.session_state.messages) > 1:
+            recent_messages = st.session_state.messages[-6:-1]  # Last 3 Q&A pairs
+            for msg in recent_messages:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                conversation_history += f"{role}: {msg['content'][:200]}\n"
+
+        CUSTOM_PROMPT_TEMPLATE = f"""
 Use only the provided context to answer the user's question.
 If the answer is not found within the context, respond with 'NA' and nothing else.
 Be concise and direct.
 
-Context: {context}
+Previous conversation:
+{conversation_history}
 
-Question: {question}
+Context: {{context}}
+
+Question: {{question}}
 
 Answer:"""
-
-        HUGGINGFACE_REPO_ID = "google/flan-t5-base"
 
         try:
             vectorstore = get_vectorstore()
@@ -121,33 +110,44 @@ Answer:"""
                 st.error("Failed to load the vector store")
                 return
 
-            # Prepare the QA chain
+            # Prepare the QA chain with improved retrieval
             qa_chain = RetrievalQA.from_chain_type(
                 llm=get_llm(),
                 chain_type="stuff",
-                retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
+                retriever=vectorstore.as_retriever(
+                    search_type="similarity",
+                    search_kwargs={"k": 5, "fetch_k": 10}
+                ),
                 return_source_documents=True,
                 chain_type_kwargs={"prompt": set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
             )
 
-            # Run the query
-            response = qa_chain.invoke({"query": prompt})
-            result = response["result"].strip()
+            # Run the query with streaming
+            with st.chat_message("assistant"):
+                with st.spinner("Searching medical encyclopedia..."):
+                    response = qa_chain.invoke({"query": prompt})
+                    result = response["result"].strip()
 
-            # If the answer is "NA", show only "NA" with no citations
-            if result == "NA":
-                result_to_show = "NA"
-            else:
-                source_documents = response["source_documents"]
-                result_to_show = clean_text(result)
-                source_docs = format_source_docs(source_documents)
-                result_to_show = f"{result_to_show}\n\n**Source Documents**:\n{source_docs}"
+                # If the answer is "NA", show only "NA" with no citations
+                if result == "NA":
+                    result_to_show = "NA"
+                else:
+                    source_documents = response["source_documents"]
+                    result_to_show = clean_text(result)
+                    source_docs = format_source_docs(source_documents)
+                    result_to_show = f"{result_to_show}\n\n**Source Documents**:\n{source_docs}"
 
-            st.chat_message("assistant").markdown(result_to_show)
+                st.markdown(result_to_show)
+
             st.session_state.messages.append({"role": "assistant", "content": result_to_show})
 
+        except FileNotFoundError as e:
+            st.error(f"Vector store not found: {str(e)}")
+        except ValueError as e:
+            st.error(f"Configuration error: {str(e)}")
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"Unexpected error occurred: {str(e)}")
+            st.exception(e)
 
 if __name__ == "__main__":
     main()

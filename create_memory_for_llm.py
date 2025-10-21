@@ -16,8 +16,12 @@ documents=load_pdf_files(data=DATA_PATH)
 print("lnght of doc pages:",len(documents))
 #Create Chunks
 def create_chunks(extracted_data):
-    text_splitter=RecursiveCharacterTextSplitter(chunk_size=500, #size of chunk 
-                                                 chunk_overlap=50)#for context overlap
+    text_splitter=RecursiveCharacterTextSplitter(
+        chunk_size=1200,
+        chunk_overlap=200,
+        length_function=len,
+        separators=["\n\n", "\n", ". ", " ", ""]
+    )
     text_chunks=text_splitter.split_documents(extracted_data)
     return text_chunks
 text_chunks=create_chunks(extracted_data=documents)
@@ -30,8 +34,8 @@ def get_embedding_model():
    
    embedding_model=HuggingFaceEmbeddings(
        model_name="sentence-transformers/all-MiniLM-L6-v2",
-       model_kwargs={'use_auth_token': HF_TOKEN}
-   )#chuncks to numeric emdeiing numbers
+       model_kwargs={'token': HF_TOKEN}
+   )
    return embedding_model
 embedding_model=get_embedding_model()
 #store in faiss locally
